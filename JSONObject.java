@@ -30,47 +30,49 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its external
  * form is a string wrapped in curly braces with colons between the names and
  * values, and commas between the values and names. The internal form is an
- * object having <code>get</code> and <code>opt</code> methods for accessing
- * the values by name, and <code>put</code> methods for adding or replacing
- * values by name. The values can be any of these types: <code>Boolean</code>,
- * <code>JSONArray</code>, <code>JSONObject</code>, <code>Number</code>,
- * <code>String</code>, or the <code>JSONObject.NULL</code> object. A
- * JSONObject constructor can be used to convert an external form JSON text
- * into an internal form whose values can be retrieved with the
- * <code>get</code> and <code>opt</code> methods, or to convert values into a
- * JSON text using the <code>put</code> and <code>toString</code> methods. A
- * <code>get</code> method returns a value if one can be found, and throws an
- * exception if one cannot be found. An <code>opt</code> method returns a
- * default value instead of throwing an exception, and so is useful for
- * obtaining optional values.
+ * object having <code>get</code> and <code>opt</code> methods for accessing the
+ * values by name, and <code>put</code> methods for adding or replacing values
+ * by name. The values can be any of these types: <code>Boolean</code>,
+ * <code>JSONArray</code> , <code>JSONObject</code>, <code>Number</code>,
+ * <code>String</code>, or the <code>JSONObject.NULL</code> object. A JSONObject
+ * constructor can be used to convert an external form JSON text into an
+ * internal form whose values can be retrieved with the <code>get</code> and
+ * <code>opt</code> methods, or to convert values into a JSON text using the
+ * <code>put</code> and <code>toString</code> methods. A <code>get</code> method
+ * returns a value if one can be found, and throws an exception if one cannot be
+ * found. An <code>opt</code> method returns a default value instead of throwing
+ * an exception, and so is useful for obtaining optional values.
  * <p>
  * The generic <code>get()</code> and <code>opt()</code> methods return an
  * object, which you can cast or query for type. There are also typed
  * <code>get</code> and <code>opt</code> methods that do type checking and type
- * coercion for you. The opt methods differ from the get methods in that they
- * do not throw. Instead, they return a specified value, such as null.
+ * coercion for you. The opt methods differ from the get methods in that they do
+ * not throw. Instead, they return a specified value, such as null.
  * <p>
- * The <code>put</code> methods add or replace values in an object. For
- * example,
- *
+ * The <code>put</code> methods add or replace values in an object. For example,
+ * 
  * <pre>
- * myString = new JSONObject()
- *         .put(&quot;JSON&quot;, &quot;Hello, World!&quot;).toString();
+ * myString = new JSONObject().put(&quot;JSON&quot;, &quot;Hello, World!&quot;).toString();
  * </pre>
- *
+ * 
  * produces the string <code>{"JSON": "Hello, World"}</code>.
  * <p>
  * The texts produced by the <code>toString</code> methods strictly conform to
@@ -79,16 +81,16 @@ import java.util.Set;
  * <ul>
  * <li>An extra <code>,</code>&nbsp;<small>(comma)</small> may appear just
  * before the closing brace.</li>
- * <li>Strings may be quoted with <code>'</code>&nbsp;<small>(single
+ * <li>Strings may be quoted with <code>'</code> &nbsp;<small>(single
  * quote)</small>.</li>
- * <li>Strings do not need to be quoted at all if they do not begin with a
- * quote or single quote, and if they do not contain leading or trailing
- * spaces, and if they do not contain any of these characters:
- * <code>{ } [ ] / \ : , #</code> and if they do not look like numbers and
- * if they are not the reserved words <code>true</code>, <code>false</code>,
- * or <code>null</code>.</li>
+ * <li>Strings do not need to be quoted at all if they do not begin with a quote
+ * or single quote, and if they do not contain leading or trailing spaces, and
+ * if they do not contain any of these characters:
+ * <code>{ } [ ] / \ : , #</code> and if they do not look like numbers and if
+ * they are not the reserved words <code>true</code>, <code>false</code>, or
+ * <code>null</code>.</li>
  * </ul>
- *
+ * 
  * @author JSON.org
  * @version 2013-06-17
  */
@@ -101,9 +103,9 @@ public class JSONObject {
     private static final class Null {
 
         /**
-         * There is only intended to be a single instance of the NULL object,
-         * so the clone method returns itself.
-         *
+         * There is only intended to be a single instance of the NULL object, so
+         * the clone method returns itself.
+         * 
          * @return NULL.
          */
         protected final Object clone() {
@@ -112,7 +114,7 @@ public class JSONObject {
 
         /**
          * A Null object is equal to the null value and to itself.
-         *
+         * 
          * @param object
          *            An object to test for nullness.
          * @return true if the object parameter is the JSONObject.NULL object or
@@ -124,7 +126,7 @@ public class JSONObject {
 
         /**
          * Get the "null" string value.
-         *
+         * 
          * @return The string "null".
          */
         public String toString() {
@@ -156,7 +158,7 @@ public class JSONObject {
      * Construct a JSONObject from a subset of another JSONObject. An array of
      * strings is used to identify the keys that should be copied. Missing keys
      * are ignored.
-     *
+     * 
      * @param jo
      *            A JSONObject.
      * @param names
@@ -178,7 +180,7 @@ public class JSONObject {
 
     /**
      * Construct a JSONObject from a JSONTokener.
-     *
+     * 
      * @param x
      *            A JSONTokener object containing the source string.
      * @throws JSONException
@@ -205,7 +207,7 @@ public class JSONObject {
                 key = x.nextValue().toString();
             }
 
-// The key is followed by ':'.
+            // The key is followed by ':'.
 
             c = x.nextClean();
             if (c != ':') {
@@ -213,7 +215,7 @@ public class JSONObject {
             }
             this.putOnce(key, x.nextValue());
 
-// Pairs are separated by ','.
+            // Pairs are separated by ','.
 
             switch (x.nextClean()) {
             case ';':
@@ -233,7 +235,7 @@ public class JSONObject {
 
     /**
      * Construct a JSONObject from a Map.
-     *
+     * 
      * @param map
      *            A map object that can be used to initialize the contents of
      *            the JSONObject.
@@ -260,16 +262,16 @@ public class JSONObject {
      * <code>"is"</code> followed by an uppercase letter, the method is invoked,
      * and a key and the value returned from the getter method are put into the
      * new JSONObject.
-     *
+     * 
      * The key is formed by removing the <code>"get"</code> or <code>"is"</code>
      * prefix. If the second remaining character is not upper case, then the
      * first character is converted to lower case.
-     *
+     * 
      * For example, if an object has a method named <code>"getName"</code>, and
      * if the result of calling <code>object.getName()</code> is
      * <code>"Larry Fine"</code>, then the JSONObject will contain
      * <code>"name": "Larry Fine"</code>.
-     *
+     * 
      * @param bean
      *            An object that has getter methods that should be used to make
      *            a JSONObject.
@@ -285,7 +287,7 @@ public class JSONObject {
      * the names array, and the values will be the field values associated with
      * those keys in the object. If a key is not found or not visible, then it
      * will not be copied into the new JSONObject.
-     *
+     * 
      * @param object
      *            An object that has fields that should be used to make a
      *            JSONObject.
@@ -308,9 +310,9 @@ public class JSONObject {
     /**
      * Construct a JSONObject from a source JSON text string. This is the most
      * commonly used JSONObject constructor.
-     *
+     * 
      * @param source
-     *            A string beginning with <code>{</code>&nbsp;<small>(left
+     *            A string beginning with <code>{</code> &nbsp;<small>(left
      *            brace)</small> and ending with <code>}</code>
      *            &nbsp;<small>(right brace)</small>.
      * @exception JSONException
@@ -323,7 +325,7 @@ public class JSONObject {
 
     /**
      * Construct a JSONObject from a ResourceBundle.
-     *
+     * 
      * @param baseName
      *            The ResourceBundle base name.
      * @param locale
@@ -336,16 +338,20 @@ public class JSONObject {
         ResourceBundle bundle = ResourceBundle.getBundle(baseName, locale,
                 Thread.currentThread().getContextClassLoader());
 
-// Iterate through the keys in the bundle.
+        // Iterate through the keys in the bundle.
 
         Enumeration keys = bundle.getKeys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
             if (key instanceof String) {
 
-// Go through the path, ensuring that there is a nested JSONObject for each
-// segment except the last. Add the value using the last segment's name into
-// the deepest nested JSONObject.
+                // Go through the path, ensuring that there
+                // is a nested
+                // JSONObject for each
+                // segment except the last. Add the value
+                // using the last
+                // segment's name into
+                // the deepest nested JSONObject.
 
                 String[] path = ((String) key).split("\\.");
                 int last = path.length - 1;
@@ -370,11 +376,11 @@ public class JSONObject {
      * is stored under the key to hold all of the accumulated values. If there
      * is already a JSONArray, then the new value is appended to it. In
      * contrast, the put method replaces the previous value.
-     *
+     * 
      * If only one value is accumulated that is not a JSONArray, then the result
      * will be the same as using put. But if multiple values are accumulated,
      * then the result will be like append.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -403,7 +409,7 @@ public class JSONObject {
      * JSONObject, then the key is put in the JSONObject with its value being a
      * JSONArray containing the value parameter. If the key was already
      * associated with a JSONArray, then the value parameter is appended to it.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -430,7 +436,7 @@ public class JSONObject {
     /**
      * Produce a string from a double. The string "null" will be returned if the
      * number is not finite.
-     *
+     * 
      * @param d
      *            A double.
      * @return A String.
@@ -440,7 +446,8 @@ public class JSONObject {
             return "null";
         }
 
-// Shave off trailing zeros and decimal point, if possible.
+        // Shave off trailing zeros and decimal point, if
+        // possible.
 
         String string = Double.toString(d);
         if (string.indexOf('.') > 0 && string.indexOf('e') < 0
@@ -457,10 +464,69 @@ public class JSONObject {
 
     /**
      * Get the value object associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
-     * @return The object associated with the key.
+     *            A key string or a search path. <h4>key</h4>
+     *            <p>
+     *            When a key is used the associated object is directly returned.
+     *            <h4>search path</h4>
+     *            <p>
+     *            When a search path is used, determined by dots or brackets in
+     *            the key, a more thorough and traversal search is performed.
+     *            <p>
+     *            Typical is that the first object that match is the one that is
+     *            returned, regardless of if there are more available that also
+     *            match.
+     *            <p>
+     *            It is possible to search among objects by dot notation like
+     *            this: <code>jsonObject.get("parent.child.child");</code>
+     *            <p>
+     *            In case of arrays this syntax can be used:
+     *            <code>jsonObject.get("parentArray[elementName==value].childArray[child.element!=value].child");</code>
+     *            <p>
+     *            Consider that this JSON has been used:
+     *            <p>
+     * 
+     *            <pre>
+     *            {
+     *              parent: {
+     *                  child: {
+     *                      child: {
+     *                          element: "value"
+     *                      }
+     *                  }
+     *              },
+     *              parentArray: [
+     *                  {
+     *                      elementName: "value",
+     *                      childArray: [
+     *                          {
+     *                              child: {
+     *                                  element: "value"
+     *                              }
+     *                          }
+     *                      ]
+     *                  }
+     *              ]
+     *            }
+     * </pre>
+     * 
+     *            These test operands can be used:
+     *            <ul>
+     *            <li><code>==</code> : Equality test
+     *            <li><code>!=</code> : Not equal test
+     *            <li><code>< </code> : Less than test
+     *            <li><code>> </code> : Greater than test
+     *            <li><code><=</code> : Less than or equal test
+     *            <li><code>>=</code> : Greater than or equal test
+     *            <li><code>*=</code> : Contains text test
+     *            <li><code>!*</code> : Not contains text test
+     *            <li><code>^=</code> : Starts with text test
+     *            <li><code>!^</code> : Not starts with text test
+     *            <li><code>$=</code> : Ends with text test
+     *            <li><code>!$</code> : Not ends with text test
+     *            </ul>
+     * @return The object associated with the key or search path.
      * @throws JSONException
      *             if the key is not found.
      */
@@ -477,13 +543,15 @@ public class JSONObject {
 
     /**
      * Get the boolean value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return The truth.
      * @throws JSONException
      *             if the value is not a Boolean or the String "true" or
      *             "false".
+     * @see JSONObject#get(String)
      */
     public boolean getBoolean(String key) throws JSONException {
         Object object = this.get(key);
@@ -502,9 +570,10 @@ public class JSONObject {
 
     /**
      * Get the double value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return The numeric value.
      * @throws JSONException
      *             if the key is not found or if the value is not a Number
@@ -523,9 +592,10 @@ public class JSONObject {
 
     /**
      * Get the int value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return The integer value.
      * @throws JSONException
      *             if the key is not found or if the value cannot be converted
@@ -544,9 +614,10 @@ public class JSONObject {
 
     /**
      * Get the JSONArray value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return A JSONArray which is the value.
      * @throws JSONException
      *             if the key is not found or if the value is not a JSONArray.
@@ -562,9 +633,10 @@ public class JSONObject {
 
     /**
      * Get the JSONObject value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return A JSONObject which is the value.
      * @throws JSONException
      *             if the key is not found or if the value is not a JSONObject.
@@ -580,9 +652,10 @@ public class JSONObject {
 
     /**
      * Get the long value associated with a key.
-     *
+     * 
      * @param key
-     *            A key string.
+     *            A key string or search path. For explanation on search path
+     *            see {@link JSONObject#get(String)}.
      * @return The long value.
      * @throws JSONException
      *             if the key is not found or if the value cannot be converted
@@ -601,7 +674,7 @@ public class JSONObject {
 
     /**
      * Get an array of field names from a JSONObject.
-     *
+     * 
      * @return An array of field names, or null if there are no names.
      */
     public static String[] getNames(JSONObject jo) {
@@ -621,7 +694,7 @@ public class JSONObject {
 
     /**
      * Get an array of field names from an Object.
-     *
+     * 
      * @return An array of field names, or null if there are no names.
      */
     public static String[] getNames(Object object) {
@@ -643,7 +716,7 @@ public class JSONObject {
 
     /**
      * Get the string associated with a key.
-     *
+     * 
      * @param key
      *            A key string.
      * @return A string which is the value.
@@ -660,7 +733,7 @@ public class JSONObject {
 
     /**
      * Determine if the JSONObject contains a specific key.
-     *
+     * 
      * @param key
      *            A key string.
      * @return true if the key exists in the JSONObject.
@@ -673,7 +746,7 @@ public class JSONObject {
      * Increment a property of a JSONObject. If there is no such property,
      * create one with a value of 1. If there is such a property, and if it is
      * an Integer, Long, Double, or Float, then add one to it.
-     *
+     * 
      * @param key
      *            A key string.
      * @return this.
@@ -702,7 +775,7 @@ public class JSONObject {
     /**
      * Determine if the value associated with the key is null or if there is no
      * value.
-     *
+     * 
      * @param key
      *            A key string.
      * @return true if there is no value associated with the key or if the value
@@ -714,7 +787,7 @@ public class JSONObject {
 
     /**
      * Get an enumeration of the keys of the JSONObject.
-     *
+     * 
      * @return An iterator of the keys.
      */
     public Iterator keys() {
@@ -723,7 +796,7 @@ public class JSONObject {
 
     /**
      * Get a set of keys of the JSONObject.
-     *
+     * 
      * @return A keySet.
      */
     public Set keySet() {
@@ -732,7 +805,7 @@ public class JSONObject {
 
     /**
      * Get the number of keys stored in the JSONObject.
-     *
+     * 
      * @return The number of keys in the JSONObject.
      */
     public int length() {
@@ -742,7 +815,7 @@ public class JSONObject {
     /**
      * Produce a JSONArray containing the names of the elements of this
      * JSONObject.
-     *
+     * 
      * @return A JSONArray containing the key strings, or null if the JSONObject
      *         is empty.
      */
@@ -757,7 +830,7 @@ public class JSONObject {
 
     /**
      * Produce a string from a Number.
-     *
+     * 
      * @param number
      *            A Number
      * @return A String.
@@ -770,7 +843,8 @@ public class JSONObject {
         }
         testValidity(number);
 
-// Shave off trailing zeros and decimal point, if possible.
+        // Shave off trailing zeros and decimal point, if
+        // possible.
 
         String string = number.toString();
         if (string.indexOf('.') > 0 && string.indexOf('e') < 0
@@ -787,19 +861,272 @@ public class JSONObject {
 
     /**
      * Get an optional value associated with a key.
-     *
+     * 
      * @param key
      *            A key string.
      * @return An object which is the value, or null if there is no value.
      */
     public Object opt(String key) {
-        return key == null ? null : this.map.get(key);
+        return key == null ? null
+                : (key.indexOf('.') != -1 || key.indexOf('[') != -1) ? optSearchByPath(key)
+                        : this.map.get(key);
+    }
+
+    private enum Comparator {
+        EQ("=="), NE("!="), LT("<"), GT(">"), LE("<="), GE(">="), PO("*="), NP(
+                "!*"), SW("^="), NS("!^"), TW("$="), NT("!$");
+
+        private final String comparatorString;
+
+        private Comparator(String comparatorString) {
+            this.comparatorString = comparatorString;
+        }
+
+        public String getComparatorString() {
+            return comparatorString;
+        }
+
+        public static final Comparator getMatchingComparator(
+                String comparatorString) {
+            for (Comparator comparator : Comparator.values()) {
+                if (comparator.getComparatorString().equals(comparatorString)) {
+                    return comparator;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * This is a advanced search by path method that is integrated in the normal
+     * search of JSONObject in the opt(key) method. This means that it works for
+     * any of the normal get methods like getString, getInt and so fourth.
+     * <p>
+     * Typical is that the first object that match is the one that is returned,
+     * regardless of if there are more available that also match.
+     * <p>
+     * It is possible to search by dot notation like this:
+     * <code>jsonObject.getString("first.second.third.string");</code>
+     * <p>
+     * In case of arrays this syntax can be used:
+     * <code>jsonObject.getString("first[element==value].second[element.element!=value].string");</code>
+     * <p>
+     * These test operands can be used:
+     * <ul>
+     * <li>== : Equality test
+     * <li>!= : Not equal test
+     * <li>< : Less than test
+     * <li>>: Greater than test
+     * <li><= : Less than or equal test
+     * <li>>=: Greater than or equal test
+     * <li>*= : Contains text test
+     * <li>!* : Not contains text test
+     * <li>^= : Starts with text test
+     * <li>!^ : Not starts with text test
+     * <li>$= : Ends with text test
+     * <li>!$ : Not ends with text test
+     * </ul>
+     * 
+     * @param path
+     *            The path to the value requested.
+     * @return The object that match the path or null if not found.
+     */
+    private Object optSearchByPath(String path) {
+        List<String> pathList = new ArrayList<String>(Arrays.asList(path
+                .split("\\.")));
+        String key = getBracesCompleteKey(pathList);
+        Object object = null;
+        if (key.matches(".+\\[.+\\]")) {
+            object = getObjectFromArray(key);
+        } else {
+            object = opt(key);
+        }
+        if (pathList.size() > 1) {
+            if ((object instanceof JSONArray)) {
+                // throw new JSONException("The element '" + key +
+                // "' is a JSONArray and must be addressed with [].");
+                object = getJSONArray(key).get(0);
+            }
+            pathList.remove(0);
+            if (object != null && object instanceof JSONObject) {
+                JSONObject jsonObject = (JSONObject) object;
+                String restPath = joinList(pathList, ".");
+                return jsonObject.optSearchByPath(restPath);
+            }
+        }
+        return object;
+    }
+
+    private String getBracesCompleteKey(List<String> pathList) {
+        String first = pathList.get(0);
+        while (countOccurrance("[", first) != countOccurrance("]", first)) {
+            pathList.remove(0);
+            first = first + "." + pathList.get(0);
+            pathList.set(0, first);
+        }
+        return first;
+    }
+
+    private int countOccurrance(String match, String string) {
+        int result = 0;
+        int from = 0;
+        while ((from = string.indexOf(match, from)) != -1) {
+            from++;
+            result++;
+        }
+        return result;
+    }
+
+    private Object getObjectFromArray(String arrayKey) {
+        Pattern numeric = Pattern.compile("(.+)\\[(\\d+)\\]");
+        Pattern field = Pattern
+                .compile("([^\\[]+)\\[([^\\^\\$*=<>!]+)(==|\\*=|!\\*|\\^=|!\\^|\\$=|!\\$|<|>|<=|<=|!=)([^=]+)\\]");
+        Matcher numericMatcher = numeric.matcher(arrayKey);
+        Matcher fieldMatcher = field.matcher(arrayKey);
+        if (numericMatcher.matches()) {
+            String key = numericMatcher.group(1);
+            int index = Integer.parseInt(numericMatcher.group(2));
+            JSONArray array = optJSONArray(key);
+            return array.get(index);
+        } else if (fieldMatcher.matches()) {
+            String key = fieldMatcher.group(1);
+            JSONArray array = getJSONArray(key);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject jsonObject = array.getJSONObject(i);
+                if (match(
+                        jsonObject,
+                        fieldMatcher.group(2),
+                        Comparator.getMatchingComparator(fieldMatcher.group(3)),
+                        fieldMatcher.group(4))) {
+                    return jsonObject;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean match(JSONObject parent, String key, Comparator comparator,
+            String testString) {
+        Object object = parent.opt(key);
+        if (object == null || object == JSONObject.NULL) {
+            return testString == null ? true : "null"
+                    .equalsIgnoreCase(testString);
+        }
+        if (object instanceof Boolean) {
+            switch (comparator) {
+                case EQ:
+                    return testString.equalsIgnoreCase(object.toString());
+                case NE:
+                    return !testString.equalsIgnoreCase(object.toString());
+                default:  
+                    throw new JSONException(
+                            "A boolean field can only be tested with == or !=.");
+            }
+        }
+        if (object instanceof Number) {
+            if (object instanceof Integer || object instanceof Long) {
+                long val = 0L;
+                if (object instanceof Integer) {
+                    val = ((Integer) object).longValue();
+                } else {
+                    val = ((Long) object).longValue();
+                }
+                long tst = Long.parseLong(testString);
+                switch (comparator) {
+                    case EQ:
+                        return val == tst;
+                    case NE:
+                        return val != tst;
+                    case GT:
+                        return val > tst;
+                    case LT:
+                        return val < tst;
+                    case GE:
+                        return val >= tst;
+                    case LE:
+                        return val <= tst;
+                    default:
+                        object = numberToString(val);
+                }
+            }
+            if (object instanceof Double) {
+                double val = ((Double) object).doubleValue();
+                double tst = Double.parseDouble(testString);
+                switch (comparator) {
+                    case EQ:
+                        return val == tst;
+                    case NE:
+                        return val != tst;
+                    case GT:
+                        return val > tst;
+                    case LT:
+                        return val < tst;
+                    case GE:
+                        return val >= tst;
+                    case LE:
+                        return val <= tst;
+                    default:
+                    object = numberToString(val);
+                }
+            }
+        }
+        // compare as string
+        switch (comparator) {
+            case EQ:
+                return object.toString().equals(testString);
+            case NE:
+                return !object.toString().equals(testString);
+            case PO:
+                return object.toString().contains(testString);
+            case NP:
+                return !object.toString().contains(testString);
+            case SW:
+                return object.toString().startsWith(testString);
+            case NS:
+                return !object.toString().startsWith(testString);
+            case TW:
+                return object.toString().endsWith(testString);
+            case NT:
+                return !object.toString().endsWith(testString);
+            case GT:
+                return object.toString().compareToIgnoreCase(testString) > 0;
+            case LT:
+                return object.toString().compareToIgnoreCase(testString) < 0;
+            case GE:
+                return object.toString().compareToIgnoreCase(testString) >= 0;
+            case LE:
+                return object.toString().compareToIgnoreCase(testString) <= 0;
+            default:
+            throw new JSONException("The comparatorString '" + comparator
+                    + "' is unknown.");
+        }
+    }
+
+    /**
+     * This helper method joins each element in the String list with the
+     * separator between.
+     * 
+     * @param list
+     *            The list of strings
+     * @param separator
+     *            The separator
+     * @return The concatenated string.
+     */
+    private String joinList(List<String> list, String separator) {
+        StringBuffer result = new StringBuffer();
+        for (int index = 0; index < list.size(); index++) {
+            if (index > 0) {
+                result.append(separator);
+            }
+            result.append(list.get(index));
+        }
+        return result.toString();
     }
 
     /**
      * Get an optional boolean associated with a key. It returns false if there
      * is no such key, or if the value is not Boolean.TRUE or the String "true".
-     *
+     * 
      * @param key
      *            A key string.
      * @return The truth.
@@ -812,7 +1139,7 @@ public class JSONObject {
      * Get an optional boolean associated with a key. It returns the
      * defaultValue if there is no such key, or if it is not a Boolean or the
      * String "true" or "false" (case insensitive).
-     *
+     * 
      * @param key
      *            A key string.
      * @param defaultValue
@@ -831,7 +1158,7 @@ public class JSONObject {
      * Get an optional double associated with a key, or NaN if there is no such
      * key or if its value is not a number. If the value is a string, an attempt
      * will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A string which is the key.
      * @return An object which is the value.
@@ -844,7 +1171,7 @@ public class JSONObject {
      * Get an optional double associated with a key, or the defaultValue if
      * there is no such key or if its value is not a number. If the value is a
      * string, an attempt will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A key string.
      * @param defaultValue
@@ -863,7 +1190,7 @@ public class JSONObject {
      * Get an optional int value associated with a key, or zero if there is no
      * such key or if the value is not a number. If the value is a string, an
      * attempt will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A key string.
      * @return An object which is the value.
@@ -876,7 +1203,7 @@ public class JSONObject {
      * Get an optional int value associated with a key, or the default if there
      * is no such key or if the value is not a number. If the value is a string,
      * an attempt will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A key string.
      * @param defaultValue
@@ -894,7 +1221,7 @@ public class JSONObject {
     /**
      * Get an optional JSONArray associated with a key. It returns null if there
      * is no such key, or if its value is not a JSONArray.
-     *
+     * 
      * @param key
      *            A key string.
      * @return A JSONArray which is the value.
@@ -907,7 +1234,7 @@ public class JSONObject {
     /**
      * Get an optional JSONObject associated with a key. It returns null if
      * there is no such key, or if its value is not a JSONObject.
-     *
+     * 
      * @param key
      *            A key string.
      * @return A JSONObject which is the value.
@@ -921,7 +1248,7 @@ public class JSONObject {
      * Get an optional long value associated with a key, or zero if there is no
      * such key or if the value is not a number. If the value is a string, an
      * attempt will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A key string.
      * @return An object which is the value.
@@ -934,7 +1261,7 @@ public class JSONObject {
      * Get an optional long value associated with a key, or the default if there
      * is no such key or if the value is not a number. If the value is a string,
      * an attempt will be made to evaluate it as a number.
-     *
+     * 
      * @param key
      *            A key string.
      * @param defaultValue
@@ -953,7 +1280,7 @@ public class JSONObject {
      * Get an optional string associated with a key. It returns an empty string
      * if there is no such key. If the value is not a string and is not null,
      * then it is converted to a string.
-     *
+     * 
      * @param key
      *            A key string.
      * @return A string which is the value.
@@ -965,7 +1292,7 @@ public class JSONObject {
     /**
      * Get an optional string associated with a key. It returns the defaultValue
      * if there is no such key.
-     *
+     * 
      * @param key
      *            A key string.
      * @param defaultValue
@@ -980,7 +1307,8 @@ public class JSONObject {
     private void populateMap(Object bean) {
         Class klass = bean.getClass();
 
-// If klass is a System class then set includeSuperClass to false.
+        // If klass is a System class then set
+        // includeSuperClass to false.
 
         boolean includeSuperClass = klass.getClassLoader() != null;
 
@@ -1025,7 +1353,7 @@ public class JSONObject {
 
     /**
      * Put a key/boolean pair in the JSONObject.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1042,7 +1370,7 @@ public class JSONObject {
     /**
      * Put a key/value pair in the JSONObject, where the value will be a
      * JSONArray which is produced from a Collection.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1057,7 +1385,7 @@ public class JSONObject {
 
     /**
      * Put a key/double pair in the JSONObject.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1073,7 +1401,7 @@ public class JSONObject {
 
     /**
      * Put a key/int pair in the JSONObject.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1089,7 +1417,7 @@ public class JSONObject {
 
     /**
      * Put a key/long pair in the JSONObject.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1106,7 +1434,7 @@ public class JSONObject {
     /**
      * Put a key/value pair in the JSONObject, where the value will be a
      * JSONObject which is produced from a Map.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1122,7 +1450,7 @@ public class JSONObject {
     /**
      * Put a key/value pair in the JSONObject. If the value is null, then the
      * key will be removed from the JSONObject if it is present.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1150,7 +1478,7 @@ public class JSONObject {
      * Put a key/value pair in the JSONObject, but only if the key and the value
      * are both non-null, and only if there is not already a member with that
      * name.
-     *
+     * 
      * @param key
      * @param value
      * @return his.
@@ -1170,7 +1498,7 @@ public class JSONObject {
     /**
      * Put a key/value pair in the JSONObject, but only if the key and the value
      * are both non-null.
-     *
+     * 
      * @param key
      *            A key string.
      * @param value
@@ -1193,7 +1521,7 @@ public class JSONObject {
      * right places. A backslash will be inserted within </, producing <\/,
      * allowing JSON text to be delivered in HTML. In JSON text, a string cannot
      * contain a control character or an unescaped quote or backslash.
-     *
+     * 
      * @param string
      *            A String
      * @return A String correctly formatted for insertion in a JSON text.
@@ -1204,7 +1532,8 @@ public class JSONObject {
             try {
                 return quote(string, sw).toString();
             } catch (IOException ignored) {
-                // will never happen - we are writing to a string writer
+                // will never happen - we are writing to a
+                // string writer
                 return "";
             }
         }
@@ -1271,7 +1600,7 @@ public class JSONObject {
 
     /**
      * Remove a name and its value, if present.
-     *
+     * 
      * @param key
      *            The name to be removed.
      * @return The value that was associated with the name, or null if there was
@@ -1284,7 +1613,7 @@ public class JSONObject {
     /**
      * Try to convert a string into a number, boolean, or null. If the string
      * can't be converted, return the string.
-     *
+     * 
      * @param string
      *            A String.
      * @return A simple JSON value.
@@ -1336,7 +1665,7 @@ public class JSONObject {
 
     /**
      * Throw an exception if the object is a NaN or infinite number.
-     *
+     * 
      * @param o
      *            The object to test.
      * @throws JSONException
@@ -1361,7 +1690,7 @@ public class JSONObject {
     /**
      * Produce a JSONArray containing the values of the members of this
      * JSONObject.
-     *
+     * 
      * @param names
      *            A JSONArray containing a list of key strings. This determines
      *            the sequence of the values in the result.
@@ -1386,9 +1715,9 @@ public class JSONObject {
      * then null will be returned instead.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
-     *
+     * 
      * @return a printable, displayable, portable, transmittable representation
-     *         of the object, beginning with <code>{</code>&nbsp;<small>(left
+     *         of the object, beginning with <code>{</code> &nbsp;<small>(left
      *         brace)</small> and ending with <code>}</code>&nbsp;<small>(right
      *         brace)</small>.
      */
@@ -1404,11 +1733,11 @@ public class JSONObject {
      * Make a prettyprinted JSON text of this JSONObject.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
-     *
+     * 
      * @param indentFactor
      *            The number of spaces to add to each level of indentation.
      * @return a printable, displayable, portable, transmittable representation
-     *         of the object, beginning with <code>{</code>&nbsp;<small>(left
+     *         of the object, beginning with <code>{</code> &nbsp;<small>(left
      *         brace)</small> and ending with <code>}</code>&nbsp;<small>(right
      *         brace)</small>.
      * @throws JSONException
@@ -1432,15 +1761,15 @@ public class JSONObject {
      * JSONObject will be made from it and its toJSONString method will be
      * called. Otherwise, the value's toString method will be called, and the
      * result will be quoted.
-     *
+     * 
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
-     *
+     * 
      * @param value
      *            The value to be serialized.
      * @return a printable, displayable, transmittable representation of the
-     *         object, beginning with <code>{</code>&nbsp;<small>(left
-     *         brace)</small> and ending with <code>}</code>&nbsp;<small>(right
+     *         object, beginning with <code>{</code> &nbsp;<small>(left
+     *         brace)</small> and ending with <code>}</code> &nbsp;<small>(right
      *         brace)</small>.
      * @throws JSONException
      *             If the value is or contains an invalid number.
@@ -1487,7 +1816,7 @@ public class JSONObject {
      * String, et al) then it is already wrapped. Otherwise, if it comes from
      * one of the java packages, turn it into a string. And if it doesn't, try
      * to wrap it in a JSONObject. If the wrapping fails, then null is returned.
-     *
+     * 
      * @param object
      *            The object to wrap
      * @return The wrapped value
@@ -1535,7 +1864,7 @@ public class JSONObject {
      * compactness, no whitespace is added.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
-     *
+     * 
      * @return The writer.
      * @throws JSONException
      */
@@ -1587,7 +1916,7 @@ public class JSONObject {
      * compactness, no whitespace is added.
      * <p>
      * Warning: This method assumes that the data structure is acyclical.
-     *
+     * 
      * @return The writer.
      * @throws JSONException
      */
