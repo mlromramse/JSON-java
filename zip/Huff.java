@@ -1,6 +1,6 @@
-package org.json.zip;
+package org.jsonfork.zip;
 
-import org.json.JSONException;
+import org.jsonfork.JSONException;
 
 /*
  Copyright (c) 2013 JSON.org

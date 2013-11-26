@@ -1,4 +1,4 @@
-package org.json.zip;
+package org.jsonfork.zip;
 
 /**
  * None is an interface that makes the constant <i>none</i> (short for

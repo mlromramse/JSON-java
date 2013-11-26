@@ -1,4 +1,4 @@
-package org.json;
+package org.jsonfork;
 
 /**
  * The JSONException is thrown by the JSON.org classes when things are amiss.

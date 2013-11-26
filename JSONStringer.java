@@ -1,4 +1,4 @@
-package org.json;
+package org.jsonfork;
 
 /*
 Copyright (c) 2006 JSON.org

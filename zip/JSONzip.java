@@ -1,4 +1,4 @@
-package org.json.zip;
+package org.jsonfork.zip;
 
 
 /*

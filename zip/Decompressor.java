@@ -1,11 +1,11 @@
-package org.json.zip;
+package org.jsonfork.zip;
 
 import java.io.UnsupportedEncodingException;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.Kim;
+import org.jsonfork.JSONArray;
+import org.jsonfork.JSONException;
+import org.jsonfork.JSONObject;
+import org.jsonfork.Kim;
 
 /*
  Copyright (c) 2012 JSON.org
