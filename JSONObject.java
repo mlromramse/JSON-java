@@ -189,6 +189,15 @@ public class JSONObject {
      */
     public JSONObject(JSONTokener x) throws JSONException {
         this();
+        parse(x);
+        setSearchByPathChars('.', '[', ']');
+    }
+    
+    public void parse(String jsonString) {
+        parse(new JSONTokener(jsonString));
+    }
+
+    public void parse(JSONTokener x) {
         char c;
         String key;
 
@@ -859,9 +868,9 @@ public class JSONObject {
         return string;
     }
     
-    private char delimiter = '.';
-    private char leftBracket = '[';
-    private char rightBracket = ']';
+    private char delimiter = (char) 0;
+    private char leftBracket = (char) 0;
+    private char rightBracket = (char) 0;
     
     public void setSearchByPathChars(char delimiter, char leftBracket, char rightBracket) {
         this.delimiter = delimiter;
