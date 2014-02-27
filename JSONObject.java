@@ -858,6 +858,16 @@ public class JSONObject {
         }
         return string;
     }
+    
+    private char delimiter = '.';
+    private char leftBracket = '[';
+    private char rightBracket = ']';
+    
+    public void setSearchByPathChars(char delimiter, char leftBracket, char rightBracket) {
+        this.delimiter = delimiter;
+        this.leftBracket = leftBracket;
+        this.rightBracket = rightBracket;
+    }
 
     /**
      * Get an optional value associated with a key.
@@ -868,7 +878,7 @@ public class JSONObject {
      */
     public Object opt(String key) {
         return key == null ? null
-                : (key.indexOf('.') != -1 || key.indexOf('[') != -1) ? optSearchByPath(key)
+                : (key.indexOf(delimiter) != -1 || key.indexOf(leftBracket) != -1) ? optSearchByPath(key)
                         : this.map.get(key);
     }
 
@@ -933,10 +943,10 @@ public class JSONObject {
      */
     private Object optSearchByPath(String path) {
         List<String> pathList = new ArrayList<String>(Arrays.asList(path
-                .split("\\.")));
+                .split("\\"+delimiter)));
         String key = getBracesCompleteKey(pathList);
         Object object = null;
-        if (key.matches(".+\\[.+\\]")) {
+        if (key.matches(".+\\" + leftBracket + ".+\\" + rightBracket)) {
             object = getObjectFromArray(key);
         } else {
             object = opt(key);
@@ -950,7 +960,8 @@ public class JSONObject {
             pathList.remove(0);
             if (object != null && object instanceof JSONObject) {
                 JSONObject jsonObject = (JSONObject) object;
-                String restPath = joinList(pathList, ".");
+                jsonObject.setSearchByPathChars(delimiter, leftBracket, rightBracket);
+                String restPath = joinList(pathList, delimiter);
                 return jsonObject.optSearchByPath(restPath);
             }
         }
@@ -959,15 +970,15 @@ public class JSONObject {
 
     private String getBracesCompleteKey(List<String> pathList) {
         String first = pathList.get(0);
-        while (countOccurrance("[", first) != countOccurrance("]", first)) {
+        while (countOccurrance(leftBracket, first) != countOccurrance(rightBracket, first)) {
             pathList.remove(0);
-            first = first + "." + pathList.get(0);
+            first = first + delimiter + pathList.get(0);
             pathList.set(0, first);
         }
         return first;
     }
 
-    private int countOccurrance(String match, String string) {
+    private int countOccurrance(char match, String string) {
         int result = 0;
         int from = 0;
         while ((from = string.indexOf(match, from)) != -1) {
@@ -978,21 +989,22 @@ public class JSONObject {
     }
 
     private Object getObjectFromArray(String arrayKey) {
-        Pattern numeric = Pattern.compile("(.+)\\[(\\d+)\\]");
+        Pattern numeric = Pattern.compile("(.+)\\" + leftBracket + "(\\d+)\\" + rightBracket);
         Pattern field = Pattern
-                .compile("([^\\[]+)\\[([^\\^\\$*=<>!]+)(==|\\*=|!\\*|\\^=|!\\^|\\$=|!\\$|<|>|<=|<=|!=)([^=]+)\\]");
+                .compile("([^\\" + leftBracket + "]+)\\" + leftBracket + "([^\\^\\$*=<>!]+)(==|\\*=|!\\*|\\^=|!\\^|\\$=|!\\$|<|>|<=|<=|!=)([^=]+)\\" + rightBracket);
         Matcher numericMatcher = numeric.matcher(arrayKey);
         Matcher fieldMatcher = field.matcher(arrayKey);
         if (numericMatcher.matches()) {
             String key = numericMatcher.group(1);
             int index = Integer.parseInt(numericMatcher.group(2));
             JSONArray array = optJSONArray(key);
-            return array.get(index);
+            return array!=null?array.get(index):null;
         } else if (fieldMatcher.matches()) {
             String key = fieldMatcher.group(1);
             JSONArray array = getJSONArray(key);
             for (int i = 0; i < array.length(); i++) {
                 JSONObject jsonObject = array.getJSONObject(i);
+                jsonObject.setSearchByPathChars(delimiter, leftBracket, rightBracket);
                 if (match(
                         jsonObject,
                         fieldMatcher.group(2),
@@ -1012,6 +1024,22 @@ public class JSONObject {
             return testString == null ? true : "null"
                     .equalsIgnoreCase(testString);
         }
+        String[] testArray = testString.split("\\|");
+        boolean negativeComparator = comparator.getComparatorString().startsWith("!");
+        for (int index=0; index<testArray.length; index++) {
+            boolean match = matchObject(object, comparator, testArray[index]);
+            if (!negativeComparator && match) {
+                return true;
+            }
+            if (negativeComparator && !match) {
+                return false;
+            }
+        }
+        return negativeComparator;
+    }
+
+    private boolean matchObject(Object object, Comparator comparator,
+            String testString) {
         if (object instanceof Boolean) {
             switch (comparator) {
                 case EQ:
@@ -1112,7 +1140,7 @@ public class JSONObject {
      *            The separator
      * @return The concatenated string.
      */
-    private String joinList(List<String> list, String separator) {
+    private String joinList(List<String> list, char separator) {
         StringBuffer result = new StringBuffer();
         for (int index = 0; index < list.size(); index++) {
             if (index > 0) {
