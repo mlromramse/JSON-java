@@ -748,7 +748,16 @@ public class JSONObject {
      * @return true if the key exists in the JSONObject.
      */
     public boolean has(String key) {
-        return this.map.containsKey(key);
+        if (key.indexOf(delimiter) != -1 || key.indexOf(leftBracket) != -1) {
+            try {
+                get(key);
+                return true;
+            } catch (JSONException e) {
+                return false;
+            }
+        } else {
+            return this.map.containsKey(key);
+        }
     }
 
     /**
